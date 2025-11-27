@@ -1,6 +1,7 @@
 package cd.ac.uea.assessment.order;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class OrderService {
@@ -13,14 +14,22 @@ public class OrderService {
         this.inventoryClient = inventoryClient;
     }
 
+    @Transactional
     public Order placeOrder(Long userId, Long productId) {
-        inventoryClient.checkStock(productId);
-        
+
+        boolean inStock = inventoryClient.checkStock(productId);
+
+        if (!inStock) {
+            throw new OutOfStockException(
+                "Le produit " + productId + " n'est plus en stock."
+            );
+        }
+
         Order order = new Order();
         order.setUserId(userId);
         order.setProductId(productId);
         order.setStatus("PLACED");
-        
+
         return orderRepository.save(order);
     }
 }
